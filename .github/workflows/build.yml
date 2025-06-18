@@ -1,0 +1,81 @@
+pipeline {
+
+  agent {
+
+    label 'master'
+
+  }
+
+
+
+  stages {
+
+    stage('Test setup') {
+
+      steps {
+
+        writeFile text: 'test', file: 'log/test.err'
+
+        writeFile text: 'test', file: 'test/test.log'
+
+        writeFile text: 'test', file: 'product/docu/documentation.html'
+
+      }
+
+    }
+
+
+
+    stage('Test upload') {
+
+      steps {
+
+        rtBuildInfo(buildName: 'TEST', maxBuilds: 1, deleteBuildArtifacts: true)
+
+
+
+        rtUpload(
+
+          buildName: 'TEST', 
+
+          serverId: 'marwa-instance',
+
+          spec: """{ "files": [ { "pattern": "log/**", "target": "ssi-builds/test/", "recursive": true, "flat": true, "regexp": false } ] }""",
+
+          failNoOp: true
+
+        )
+
+        rtUpload(
+
+          buildName: 'TEST', 
+
+          serverId: 'marwa-instance',
+
+          spec: """{ "files": [ { "pattern": "**/docu/(*)", "target": "ssi-documentation/test/{1}", "recursive": true, "flat": true, "regexp": false } ] }""",
+
+          failNoOp: true
+
+        )
+
+        rtUpload(
+
+          buildName: 'TEST', 
+
+          serverId: 'marwa-instance',
+
+          spec: """{ "files": [ {"pattern": "**/(*.log)", "target": "ssi-builds/test/{1}", "recursive": true, "flat": true, "regexp": false } ] }""",
+
+          failNoOp: true
+
+        )
+
+        rtPublishBuildInfo(buildName: 'TEST', serverId: 'marwa-instance')
+
+      }
+
+    }
+
+  }
+
+}
